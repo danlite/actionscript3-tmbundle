@@ -490,6 +490,16 @@ class ClassParser
 			src_list = (ENV['TM_AS3_USUAL_SRC_DIRS'] != nil) ? ENV['TM_AS3_USUAL_SRC_DIRS'].gsub(':','|') : "src"
 			@src_dirs = `find -dE "$TM_PROJECT_DIRECTORY" -maxdepth 5 -regex '.*\/(#{src_list})' -print 2>/dev/null`
 
+      if ENV['TM_AS3_EXTERNAL_SRCS']
+		  
+  		  lib_list = ENV['TM_AS3_EXTERNAL_SRCS'].split(':')
+  		  
+  		  lib_list.each do |lib|
+  		    add_src_dir(lib)
+  	    end
+  		  
+  	  end
+  	  
 		end
 
 		cs = "#{@completion_src}/data/completions"

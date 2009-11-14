@@ -25,6 +25,59 @@ module SourceTools
     src_dirs_matches
   end
 
+
+  def self.each_text_file_in_dir(dir, &block)
+    TextMate.scan_dir(dir, block, ProjectFileFilter.new)
+  end
+
+
+  # Loads all paths found within the external source directories that have
+  # a filename which contains the requested word.
+  #
+  def self.search_external_libs(word)
+
+    overall_best_paths = []
+    overall_package_paths = []
+
+    if ENV['TM_AS3_EXTERNAL_SRCS']
+      include TextMate
+
+      lib_list = ENV['TM_AS3_EXTERNAL_SRCS'].split(':')
+
+      lib_list.each do |lib|
+
+        best_paths = []
+        package_paths = []
+
+        each_text_file_in_dir(lib) do |file|
+
+          if file =~ /\b#{word}\w*\.(as|mxml)$/
+
+            path = file.sub(lib, "")
+            path = truncate_to_src(path)
+            path = path.gsub(/\.(as|mxml)$/,'').gsub( "/", ".").sub(/^\./,'')
+
+            if path =~ /\.#{word}$/
+              best_paths << path
+            else
+              package_paths << path
+            end
+
+          end
+
+        end
+
+        overall_best_paths += best_paths
+        overall_package_paths += package_paths
+
+      end
+
+    end
+
+    { :exact_matches => overall_best_paths, :partial_matches => overall_package_paths }
+
+  end
+
   # Loads all paths found within the current project that have a filename which
   # contains the requested word.
   #
@@ -100,9 +153,10 @@ module SourceTools
 
     pp = search_project_paths(word)
     bp = search_bundle_paths(word)
+    ep = search_external_libs(word)
 
-    e = pp[:exact_matches] + bp[:exact_matches]
-    p = pp[:partial_matches] + bp[:partial_matches]
+    e = pp[:exact_matches] + bp[:exact_matches] + ep[:exact_matches]
+    p = pp[:partial_matches] + bp[:partial_matches] + ep[:partial_matches]
 
     e.uniq!
     p.uniq!
